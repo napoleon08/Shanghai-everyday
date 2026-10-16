@@ -3,166 +3,228 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#07111f">
-  <meta name="description" content="상하이의 현재 날씨, 바람, 습도, 달의 위상과 5일 예보를 확인하는 기상 관측 대시보드">
-  <title>WEATHER ATLAS | Shanghai</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono&family=Manrope:wght@400;600;700;800&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#101722">
+  <meta name="description" content="상하이의 실시간 날씨, 습도, 바람, 달의 위상과 5일 예보를 확인하세요.">
+  <title>Shanghai Everyday | 상하이 날씨 연구소</title>
   <link rel="stylesheet" href="style.css">
-  <script src="https://unpkg.com/globe.gl"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="app.js" defer></script>
 </head>
 <body>
-  <header class="top">
-    <a class="brand" href="#">
-      <b>W<span>·</span>A</b>
-      <span>WEATHER ATLAS<small>FIELD STATION / CN-SHA</small></span>
+  <header class="topbar">
+    <a class="brand" href="#home">
+      <span class="brand-icon">◉</span>
+      <span>SHANGHAI <b>EVERYDAY</b></span>
     </a>
-    <div><i class="live"></i> LIVE DATA <span id="clock">SHANGHAI --:--:--</span></div>
+    <nav>
+      <a href="#weather">현재 날씨</a>
+      <a href="#forecast">5일 예보</a>
+      <a href="#moon">달과 천문</a>
+      <a href="#earth">지구 탐험</a>
+    </nav>
+    <span class="live-label"><i></i> WEATHER LIVE</span>
   </header>
 
-  <main>
+  <main id="home">
     <section class="hero">
-      <div>
-        <p class="eyebrow">EAST ASIA / ATMOSPHERIC MONITOR</p>
-        <h1>상하이의 하늘을<br><em>읽다.</em></h1>
-        <p class="lead">도시의 현재 날씨부터 바람, 습도, 달의 위상과 앞으로 5일의 변화까지 한 화면에서 확인합니다.</p>
-        <p class="coords">⌖ 중국 상하이 / 31.2304° N · 121.4737° E</p>
+      <div class="hero-copy">
+        <p class="eyebrow">WEATHER · WIND · MOON · EARTH</p>
+        <h1>오늘의 상하이,<br><span>하늘을 읽다.</span></h1>
+        <p class="hero-description">
+          날씨와 바람, 습도부터 달의 움직임까지.<br>
+          상하이의 하루를 데이터로 탐험합니다.
+        </p>
+        <a class="primary-button" href="#weather">오늘의 날씨 확인하기 ↘</a>
+        <div class="update-note">
+          <span class="pulse"></span>
+          <span id="updatedAt">날씨 데이터를 불러오는 중입니다.</span>
+        </div>
       </div>
-      <div class="globe-card">
-        <div class="globe-label">PLANET VIEW <span>01 / 03</span></div>
-        <div id="globe"></div>
-        <div class="target"><i class="live"></i> SHANGHAI TARGET LOCKED</div>
+      <div class="hero-orb" aria-hidden="true">
+        <div class="orb-glow"></div>
+        <div class="orb">
+          <div class="orb-lines"></div>
+          <div class="orb-shine"></div>
+        </div>
+        <div class="orb-caption">31°14′ N · 121°28′ E</div>
       </div>
     </section>
 
-    <div class="section-title">
-      <div><p class="eyebrow">01 / CURRENT CONDITIONS</p><h2>지금, 상하이</h2></div>
-      <small id="updated">데이터 확인 중</small>
-    </div>
+    <section id="weather" class="section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">01 / CURRENT CONDITIONS</p>
+          <h2>지금, 상하이</h2>
+        </div>
+        <span class="date-chip" id="currentDate">현지 날짜 확인 중</span>
+      </div>
 
-    <section class="grid">
-      <article class="panel current">
-        <div class="tag">CURRENT WEATHER <span>A1</span></div>
-        <div class="current-row">
-          <div>
-            <div class="temp"><span id="temp">--</span><sup>°C</sup></div>
-            <p id="condition">날씨 정보를 불러오는 중</p>
-            <small>체감 온도 <b id="feels">--°</b></small>
+      <div id="errorBox" class="error-box" hidden>
+        날씨 데이터를 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.
+      </div>
+
+      <div class="weather-layout">
+        <article class="current-card">
+          <div class="card-top">
+            <span>SHANGHAI, CHINA</span>
+            <span class="weather-symbol" id="currentIcon">☁</span>
           </div>
-          <div class="weather-icon" id="icon">◌</div>
-        </div>
-        <div class="triple">
-          <div>최고 / 최저<strong id="hiLo">--° / --°</strong></div>
-          <div>강수 확률<strong id="rain">--%</strong></div>
-          <div>UV 지수<strong id="uv">--</strong></div>
-        </div>
-      </article>
-
-      <article class="panel">
-        <div class="tag">WIND FIELD <span>↗</span></div>
-        <p class="muted">바람</p>
-        <div class="big"><span id="wind">--</span><small> km/h</small></div>
-        <div class="wind-row">
-          <div class="compass"><span>N</span><b id="needle">➤</b><small>S</small></div>
-          <div><strong id="direction">--</strong><p class="muted">풍향 <span id="degrees">--°</span></p></div>
-        </div>
-        <div class="foot">돌풍 <b id="gust">-- km/h</b></div>
-      </article>
-
-      <article class="panel">
-        <div class="tag">MOISTURE <span>◌</span></div>
-        <p class="muted">상대 습도</p>
-        <div class="big"><span id="humidity">--</span><small>%</small></div>
-        <div class="track"><i id="humidityBar"></i></div>
-        <div class="scale"><span>건조</span><span>쾌적</span><span>습함</span></div>
-        <p class="footnote">공기 중 수증기의 양을 나타내는 지표입니다.</p>
-      </article>
-
-      <article class="panel moon-panel">
-        <div class="tag">LUNAR OBSERVATION <span>✦</span></div>
-        <div class="moon-row">
-          <div class="moon" id="moon"></div>
-          <div>
-            <strong id="phase">달의 위상 계산 중</strong>
-            <p class="moon-bright"><span id="illumination">--%</span> 밝기</p>
-            <p class="muted" id="moonNote">달 정보를 준비하고 있습니다.</p>
+          <p id="currentDescription" class="weather-description">날씨 정보를 불러오는 중</p>
+          <div class="temperature">
+            <span id="temperature">--</span><sup>°C</sup>
           </div>
+          <p class="feels-like">체감 온도 <strong id="feelsLike">--°C</strong></p>
+          <div class="sunline">
+            <span>☀ 일출 <b id="sunrise">--:--</b></span>
+            <span>☾ 일몰 <b id="sunset">--:--</b></span>
+          </div>
+        </article>
+
+        <div class="metrics-grid">
+          <article class="metric-card">
+            <span class="metric-icon">◌</span>
+            <p>상대 습도</p>
+            <strong id="humidity">--<small>%</small></strong>
+            <span class="metric-foot">RELATIVE HUMIDITY</span>
+          </article>
+          <article class="metric-card">
+            <span class="metric-icon">↗</span>
+            <p>풍속</p>
+            <strong id="wind">--<small> km/h</small></strong>
+            <span class="metric-foot" id="windDirection">바람 방향 확인 중</span>
+          </article>
+          <article class="metric-card">
+            <span class="metric-icon">⌁</span>
+            <p>현재 강수량</p>
+            <strong id="rain">--<small> mm</small></strong>
+            <span class="metric-foot">PRECIPITATION</span>
+          </article>
+          <article class="metric-card">
+            <span class="metric-icon">◉</span>
+            <p>낮 / 밤</p>
+            <strong id="dayNight">--</strong>
+            <span class="metric-foot">LOCAL CONDITIONS</span>
+          </article>
         </div>
-        <div class="foot">음력 주기 <b id="moonAge">-- / 29.53일</b></div>
-      </article>
+      </div>
     </section>
 
-    <div class="section-title">
-      <div><p class="eyebrow">02 / FIVE-DAY OUTLOOK</p><h2>앞으로 5일</h2></div>
-      <small>상하이 현지 시간 · 최고/최저 기온과 강수 가능성</small>
-    </div>
-    <section id="forecast" class="forecast">
-      <div class="placeholder">5일 예보를 불러오는 중…</div>
-    </section>
-
-    <section class="lower">
-      <article class="panel">
-        <div class="tag">WIND / NEXT 24 HOURS <span>B1</span></div>
-        <h3>시간대별 바람</h3>
-        <p class="muted">바람 속도와 돌풍 변화 · km/h</p>
-        <div id="windChart" class="chart"><div class="placeholder">시간별 데이터를 불러오는 중…</div></div>
-        <div class="legend">● 바람　<span>● 돌풍</span></div>
-      </article>
-
-      <article class="panel">
-        <div class="tag">ASTRO / DAYLIGHT <span>B2</span></div>
-        <h3>하늘의 시간</h3>
-        <p class="muted">일출과 일몰, 낮의 길이</p>
-        <div class="sun"><div class="sun-path"></div><b>☼</b></div>
-        <div class="sun-times">
-          <div>일출<strong id="sunrise">--:--</strong></div>
-          <div>낮의 길이<strong id="daylength">--시간 --분</strong></div>
-          <div>일몰<strong id="sunset">--:--</strong></div>
+    <section id="forecast" class="section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">02 / THE NEXT FIVE DAYS</p>
+          <h2>앞으로 5일의 날씨</h2>
         </div>
-        <p class="footnote">상하이 현지 날짜와 시간대를 기준으로 표시합니다.</p>
+        <span class="subtle">상하이 현지 시간 기준</span>
+      </div>
+
+      <div id="forecastGrid" class="forecast-grid">
+        <div class="loading-card">5일 예보를 불러오는 중입니다…</div>
+      </div>
+
+      <article class="chart-card">
+        <div class="chart-heading">
+          <div>
+            <p class="eyebrow">TEMPERATURE OUTLOOK</p>
+            <h3>기온의 흐름</h3>
+          </div>
+          <span class="chart-legend"><i></i> 최고 기온 <i class="legend-low"></i> 최저 기온</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="temperatureChart" aria-label="5일 최고 및 최저 기온 그래프"></canvas>
+        </div>
+        <p id="chartFallback" class="subtle" hidden>그래프를 표시할 수 없습니다. 위의 5일 예보를 확인해 주세요.</p>
       </article>
     </section>
 
-    <div class="section-title">
-      <div><p class="eyebrow">03 / GEOGRAPHIC CONTEXT</p><h2>지구 위의 상하이</h2></div>
-      <a class="earth-link" target="_blank" rel="noopener" href="https://earth.google.com/web/search/Shanghai,+China/">Google Earth에서 탐색 ↗</a>
-    </div>
+    <section id="moon" class="section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">03 / LUNAR OBSERVATION</p>
+          <h2>오늘의 달</h2>
+        </div>
+        <span class="subtle">천문 데이터 기반 계산</span>
+      </div>
 
-    <section class="map-layout">
-      <article class="map">
-        <div class="map-head">◎ SHANGHAI / CHINA <span>31.2304, 121.4737</span></div>
-        <iframe title="상하이 위성 지도" src="https://maps.google.com/maps?q=Shanghai%2C%20China&t=k&z=8&output=embed" loading="lazy" allowfullscreen></iframe>
-        <div class="map-foot">위성 지도 · Google Maps / 3D 지구 탐색은 Google Earth 링크를 이용하세요.</div>
-      </article>
-
-      <aside class="panel">
-        <p class="eyebrow">LOCATION DATA</p>
-        <h3>상하이 관측 지점</h3>
-        <div class="loc"><span>도시</span><b>Shanghai / 上海</b></div>
-        <div class="loc"><span>국가</span><b>중국</b></div>
-        <div class="loc"><span>위도</span><b>31.2304° N</b></div>
-        <div class="loc"><span>경도</span><b>121.4737° E</b></div>
-        <div class="loc"><span>시간대</span><b>Asia/Shanghai (UTC+8)</b></div>
-        <a class="earth-button" target="_blank" rel="noopener" href="https://earth.google.com/web/search/Shanghai,+China/">◎ Google Earth 열기 <b>↗</b></a>
-        <p class="footnote">Google Earth는 별도 탭에서 열립니다.</p>
-      </aside>
+      <div class="moon-layout">
+        <article class="moon-card">
+          <div class="moon-visual" id="moonVisual" aria-hidden="true">🌔</div>
+          <div>
+            <p class="eyebrow">CURRENT MOON PHASE</p>
+            <h3 id="moonPhase">달의 위상 계산 중</h3>
+            <p class="moon-caption" id="moonCaption">
+              오늘 달의 상태를 계산하고 있습니다.
+            </p>
+          </div>
+        </article>
+        <article class="moon-data">
+          <div class="moon-stat">
+            <span>조명 비율</span>
+            <strong id="moonIllumination">--%</strong>
+          </div>
+          <div class="moon-stat">
+            <span>삭망월 진행률</span>
+            <strong id="moonAge">--%</strong>
+          </div>
+          <div class="moon-stat">
+            <span>다음 보름달 예상</span>
+            <strong id="nextFullMoon">--</strong>
+          </div>
+          <p class="fine-print">
+            달의 위상과 조명 비율은 날짜를 이용한 근사 계산값입니다.
+            실제 관측 조건과 천문력의 정밀값과 차이가 날 수 있습니다.
+          </p>
+        </article>
+      </div>
     </section>
 
-    <div class="notice">
-      <b>i</b>
-      <p><strong>데이터 안내</strong><br>날씨·예보는 Open-Meteo 공개 API를 사용합니다. 달의 위상은 날짜 기반 근사 계산값입니다. 네트워크 연결이 필요하며, 안전 판단에는 공식 기상기관의 정보를 확인하세요.</p>
-      <button id="refresh">↻ 데이터 새로고침</button>
-    </div>
+    <section id="earth" class="section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">04 / EXPLORE THE PLANET</p>
+          <h2>지구에서 상하이 찾기</h2>
+        </div>
+        <span class="subtle">31.2304° N · 121.4737° E</span>
+      </div>
+
+      <div class="map-card">
+        <iframe
+          title="상하이 위치 지도"
+          src="https://maps.google.com/maps?q=Shanghai%2C%20China&z=6&output=embed"
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          allowfullscreen>
+        </iframe>
+        <div class="map-footer">
+          <div>
+            <p class="eyebrow">YOUR NEXT DESTINATION</p>
+            <h3>Shanghai, China</h3>
+            <p>동아시아의 해안 도시에서 날씨와 지구의 변화를 관찰하세요.</p>
+          </div>
+          <a class="primary-button"
+             href="https://earth.google.com/web/search/Shanghai,+China/"
+             target="_blank" rel="noopener noreferrer">
+            Google Earth에서 탐험하기 ↗
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="source-note">
+      <span>DATA SOURCE</span>
+      <p>
+        날씨 및 예보: Open-Meteo 공개 API.
+        지도: Google Maps.
+        달의 위상: 날짜 기반 근사 계산.
+      </p>
+    </section>
   </main>
 
   <footer>
-    WEATHER ATLAS / SHANGHAI
-    <span>DESIGNED FOR CURIOSITY · BUILT WITH OPEN DATA</span>
-    <span>© <b id="year"></b></span>
+    <a class="brand" href="#home">SHANGHAI <b>EVERYDAY</b></a>
+    <p>도시의 날씨를 읽고, 지구를 이해하다.</p>
+    <span>© 2026 SHANGHAI WEATHER LAB</span>
   </footer>
-
-  <div id="toast" role="status"></div>
-  <script src="app.js"></script>
 </body>
 </html>

@@ -41,7 +41,7 @@ https://earth.google.com/web/search/Shanghai,+China/
 
 1. GitHub에서 새 repository를 만듭니다.
 2. index.html, style.css, app.js, README.md를 업로드합니다.
-3. Settings → Pages로 이동합니다.
+# 3. Settings → Pages로 이동합니다.
 4. Build and deployment에서 Deploy from a branch를 선택합니다.
 5. Branch는 main, folder는 /(root)를 선택합니다.
 6. Save를 누릅니다.
